@@ -1,57 +1,71 @@
 <template>
-  <div class="hello">
-    <h1>{{ msg }}</h1>
-    <p>
-      For a guide and recipes on how to configure / customize this project,<br>
-      check out the
-      <a href="https://cli.vuejs.org" target="_blank" rel="noopener">vue-cli documentation</a>.
-    </p>
-    <h3>Installed CLI Plugins</h3>
-    <ul>
-      <li><a href="https://github.com/vuejs/vue-cli/tree/dev/packages/%40vue/cli-plugin-babel" target="_blank" rel="noopener">babel</a></li>
-    </ul>
-    <h3>Essential Links</h3>
-    <ul>
-      <li><a href="https://vuejs.org" target="_blank" rel="noopener">Core Docs</a></li>
-      <li><a href="https://forum.vuejs.org" target="_blank" rel="noopener">Forum</a></li>
-      <li><a href="https://chat.vuejs.org" target="_blank" rel="noopener">Community Chat</a></li>
-      <li><a href="https://twitter.com/vuejs" target="_blank" rel="noopener">Twitter</a></li>
-      <li><a href="https://news.vuejs.org" target="_blank" rel="noopener">News</a></li>
-    </ul>
-    <h3>Ecosystem</h3>
-    <ul>
-      <li><a href="https://router.vuejs.org" target="_blank" rel="noopener">vue-router</a></li>
-      <li><a href="https://vuex.vuejs.org" target="_blank" rel="noopener">vuex</a></li>
-      <li><a href="https://github.com/vuejs/vue-devtools#vue-devtools" target="_blank" rel="noopener">vue-devtools</a></li>
-      <li><a href="https://vue-loader.vuejs.org" target="_blank" rel="noopener">vue-loader</a></li>
-      <li><a href="https://github.com/vuejs/awesome-vue" target="_blank" rel="noopener">awesome-vue</a></li>
-    </ul>
-  </div>
+  <section>
+    <div
+      class="genre"
+      v-for="(movieData, propertyName) of moviesByGenres"
+      :key="propertyName"
+    >
+      <h2>{{ propertyName }}</h2>
+      <div class="images">
+        <div class="img" v-for="movie in movieData" :key="movie.id">
+          <img :src="movie.img" :alt="movie.title" />
+        </div>
+      </div>
+    </div>
+  </section>
 </template>
 
 <script>
+import getGenres from "../../genres.json";
+let genres = Object.values(getGenres).map((data) => data);
 export default {
-  name: 'HelloWorld',
-  props: {
-    msg: String
-  }
-}
+  data() {
+    return {
+      movies: [],
+      moviesByGenres: {},
+      titleGenre: [],
+    };
+  },
+  methods: {
+    async getMovies() {
+      for (let i = 0; i < genres[0].length; i++) {
+        this.titleGenre.push({ id: genres[0][i].id, name: genres[0][i].name });
+        const response = await fetch(
+          `https://api.themoviedb.org/3/discover/movie?with_genres=${genres[0][i].id}&api_key=d38aa8716411ef7d8e9054b34a6678ac`
+        );
+        const json = await response.json();
+        const objectKey = Object.fromEntries(
+          this.titleGenre.map((data) => [data.name, []])
+        );
+        this.moviesByGenres = objectKey;
+
+        for (let j = 0; j < 5; j++) {
+          this.movies.push({
+            title: json.results[j].title,
+            id: json.results[j].genre_ids,
+            img:
+              "https://image.tmdb.org/t/p/w1280" +
+              json.results[j].backdrop_path,
+            genre: genres[0][i].name,
+          });
+        }
+
+        for (const key in objectKey) {
+          for (let j = 0; j < this.movies.length; j++) {
+            if (this.movies[j].genre === key) {
+              objectKey[key].push(this.movies[j]);
+            }
+          }
+        }
+      }
+    },
+  },
+  created() {
+    this.getMovies();
+  },
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
-<style scoped lang="scss">
-h3 {
-  margin: 40px 0 0;
-}
-ul {
-  list-style-type: none;
-  padding: 0;
-}
-li {
-  display: inline-block;
-  margin: 0 10px;
-}
-a {
-  color: #42b983;
-}
+<style lang="scss">
 </style>
